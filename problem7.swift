@@ -1658,16 +1658,46 @@ usevgds (44) -> aydmhhv, kkftjia
 tqlentr (214) -> gfxnuuk, thmlk
 """
 
-class Node {
+let testinput = """
+pbga (66)
+xhth (57)
+ebii (61)
+havc (66)
+ktlj (57)
+fwft (72) -> ktlj, cntj, xhth
+qoyq (66)
+padx (45) -> pbga, havc, qoyq
+tknk (41) -> ugml, padx, fwft
+jptl (61)
+ugml (68) -> gyxo, ebii, jptl
+gyxo (61)
+cntj (57)
+"""
+
+class Node: CustomStringConvertible, Hashable {
 	var name: String
 	var value: Int
+	var weight: Int = 0
 	var parent: String?
+	var children = [Node]()
 	var sublist: [String]
 	
 	init(name: String, value: Int, sublist: [String]) {
 		self.name = name
 		self.value = value
 		self.sublist = sublist
+	}
+	
+	var description: String {
+		return "'\(name)': (\(value)) weight: \(weight) -> \(children.map{$0.name})"
+	}
+	
+	var hashValue: Int {
+		return weight.hashValue
+	}
+	
+	static func == (lhs: Node, rhs: Node) -> Bool {
+		return lhs.weight == rhs.weight
 	}
 }
 
@@ -1685,7 +1715,7 @@ func parseLine(_ input: String) -> Node	 {
 	return Node(name: name, value: value, sublist: subNames)
 }
 
-func generateGraph(_ input: String) {
+func generateGraph(_ input: String) -> Node {
 	// Generate nodes and sublists
 	let lines = input.split(separator: "\n")
 	var nodes = [Node]()
@@ -1705,14 +1735,58 @@ func generateGraph(_ input: String) {
 			let subnode = nodeDict[subname]!
 			subnode.parent = node.name
 			nodeDict[subnode.name] = subnode
+			
+			node.children.append(subnode)
+			nodeDict[node.name] = node
 		}	
 	}
-	
-	// Get root node
 	let root = nodeDict.filter { $0.value.parent == nil }
-	for (key, _) in root {
-		print("\(key)")
-	}
+	return root.values.first!
 }
-generateGraph(input)
+var root = generateGraph(input)
+print("Part 1: \(root.name)")
+
+// Recursively calculate weights
+func calcWeights(_ node: Node) -> Int {
+	guard node.children.isEmpty == false else {
+		return node.value
+	}
+	node.weight += node.value + node.children.map({ calcWeights($0) }).reduce(0, +)
+	return node.weight
+}
+_ = calcWeights(root)
+
+func findUnbalancedNodeValue(_ node: Node) -> Int {
+	
+	guard node.children.isEmpty == false else { return 0 }
+	
+	// need to compare weights, but want value for final calc (only for the odd one out).
+	// cheat by making Node hashable on weight (since we only care about the odd one out).	
+	var countedDict = [Node: Int]()
+	for child in node.children {
+		countedDict[child, default: 0] += 1
+	}
+	
+	// is this level unbalanced?
+	if countedDict.keys.count > 1 {
+		let correctValue = countedDict.first(where: { key, value in value > 1})!.key.weight
+		let oddOneOut = countedDict.first(where: { key, value in value == 1 })!.key.weight
+		let unbalanced = countedDict.first(where: { key, value in value == 1})!.key
+		let delta = abs(oddOneOut - correctValue)
+		
+		// go deeper.
+		let childNodesUnbalanced = node.children.map { findUnbalancedNodeValue($0) }.filter { $0 != 0}.count > 0
+		if childNodesUnbalanced {
+			for child in node.children {
+				return findUnbalancedNodeValue(child)
+			}
+		} else {
+			return unbalanced.value - delta
+		}
+	}
+	return 0
+}
+print("Part 2: \(findUnbalancedNodeValue(root))")
+
+
 
