@@ -1112,6 +1112,7 @@ extension String {
 class Driver {
 	var lines: [String]
 	var registers = [String: Int]()
+	var maxRegisterValue = 0
 	
 	init(input: String) {
 		lines = input.split(separator: "\n").map {String($0)}
@@ -1152,8 +1153,13 @@ class Driver {
 		for line in lines {
 			let expr = parseLine(line)
 			registers = expr.evaluate(registers: registers)
+			
+			if let currentMaxRegisterValue = registers.values.max(), currentMaxRegisterValue > maxRegisterValue {
+				maxRegisterValue = currentMaxRegisterValue
+			}
 		}
 		print("Part 1: \(registers.values.max()!)")
+		print("Part 2: \(maxRegisterValue)")
 	}
 }
 let driver = Driver(input: input)
