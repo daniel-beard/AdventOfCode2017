@@ -23,12 +23,9 @@ At this point, we've reached a state we've seen before: 2 4 1 2 was already seen
 Given the initial block counts in your puzzle input, how many redistribution cycles must be completed before a configuration is produced that has been seen before?
 */
 
+// converts int array into a character string: E.g. [1,2,3] -> "ABC"
 func hash(for array: [Int]) -> String {
-	var result = ""
-	for i in array {
-		result += String(Character(UnicodeScalar(i + 65)!))
-	}
-	return result
+	return array.map { String(Character(UnicodeScalar($0 + 65)!)) }.reduce("", +)
 }
 
 extension Array {
@@ -39,7 +36,7 @@ extension Array {
 	}
 }
 
-func redistribute(array: [Int]) -> Int {
+func redistribute(array: [Int]) -> (redistributions: Int, loopSize: Int) {
 	var banks = array
 	var seenHashes = [String]()
 	var redistributions = 0
@@ -49,7 +46,7 @@ func redistribute(array: [Int]) -> Int {
 		let maxIndex = banks.index(of: value)!
 		var index = banks.inc(maxIndex)
 		
-		// remove from bank
+		// redistribute
 		banks[maxIndex] = 0
 		while value > 0 {
 			banks[index] += 1
@@ -57,10 +54,12 @@ func redistribute(array: [Int]) -> Int {
 			value -= 1
 		}
 		
+		// hash and check
 		redistributions += 1
 		let seenHash = hash(for: banks)
 		if seenHashes.contains(seenHash) {
-			return redistributions
+			let firstDuplicateIndex = seenHashes.index(where: {$0 == seenHash})!
+			return (redistributions, seenHashes.count - firstDuplicateIndex)
 		} else {
 			seenHashes.append(seenHash)
 		}
@@ -68,4 +67,6 @@ func redistribute(array: [Int]) -> Int {
 }
 
 let input = [10,3,15,10,5,15,5,15,9,2,5,8,5,2,3,6]
-print("Part 1: \(redistribute(array: input))")
+let result = redistribute(array: input)
+print("Part 1: \(result.redistributions)")
+print("Part 2: \(result.loopSize)")
