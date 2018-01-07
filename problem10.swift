@@ -65,36 +65,65 @@ extension Array where Element == Int {
 	}
 }
 
-func knotHash(input: [Int], lengths: [Int]) -> [Int] {
+extension String {
+	func toASCIIArray() -> [Int] {
+		var result = [Int]()
+		for character in self {
+			guard character.unicodeScalars.count == 1 else { fatalError("Unexpected scalar count") }
+			result.append(Int(character.unicodeScalars.first!.value))
+		}	
+		return result	
+	}
+}
+
+func knotHash(input: [Int], lengths: [Int], index: Int = 0, skipSize: Int = 0) -> (list: [Int], position: Int, skipSize: Int) {
 	var input = input
 	var lengths = lengths
-	var index = 0
-	var skipSize = 0
-	
+	var index = index
+	var skipSize = skipSize	
 	while !lengths.isEmpty {
 		let length = lengths.first!
 		input.replaceCircularSubrange(start: index, length: length)
 		lengths = Array(lengths.dropFirst())
 		index += length + skipSize
 		skipSize += 1
-		if index >= input.count {
+		while index >= input.count {
 			index -= input.count
 		}
 	}
-	return input
+	return (input, index, skipSize)
 }
 
 // Part 1
 let input = Array<Int>(0...255)
-let part1 = knotHash(input: input, lengths: [130,126,1,11,140,2,255,207,18,254,246,164,29,104,0,224])
+let (part1, _, _) = knotHash(input: input, lengths: [130,126,1,11,140,2,255,207,18,254,246,164,29,104,0,224])
 let result = part1[0] * part1[1]
 print("Part 1: \(result)")
 
+func part2(lengths: String) -> String {
+	var part2input = Array<Int>(0...255)
+	let part2lengths = lengths.toASCIIArray() + [17, 31, 73, 47, 23]
+	var index = 0
+	var skipSize = 0
+	for _ in 0..<64 {
+		(part2input, index, skipSize) = knotHash(input: part2input, lengths: part2lengths, index: index, skipSize: skipSize)
+	}
+	
+	// XOR to find denseHash
+	var denseHash = [Int]()
+	while !part2input.isEmpty {
+		let next = Array<Int>(part2input.prefix(16))
+		part2input = Array<Int>(part2input.dropFirst(16))
+		denseHash.append(next.reduce(0, ^))
+	}
+	
+	// convert to hexidecimal hash
+	return denseHash.map({ String(format: "%2X", $0 ) }).reduce("", +).lowercased().replacingOccurrences(of: " ", with: "0")
+}
+assert(part2(lengths: "") == "a2582a3a0e66e6e86e3812dcb672a272")
+assert(part2(lengths: "AoC 2017") == "33efeb34ea91902bb2f59c9920caa6cd")
+assert(part2(lengths: "1,2,3") == "3efbe78a8d82f29979031a4aa0b16a9d")
+assert(part2(lengths: "1,2,4") == "63960835bcdc130f0b66d7ff4f6a5a8e")
 
-
-
-
-
-
-
-
+let result2 = part2(lengths: "130,126,1,11,140,2,255,207,18,254,246,164,29,104,0,224")
+print("Part 2: \(result2)")
