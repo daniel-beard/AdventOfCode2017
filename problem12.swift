@@ -2068,6 +2068,23 @@ func recurse(goal: Int, current: Int, seen: Set<Int>, mapping: [Int: [Int]]) -> 
 }
 
 // Part 1
-let part1Mapping = mapping(from: input)
-print("Part1: \(recurse(goal: 0, current: 0, seen: Set<Int>(), mapping: part1Mapping).count)")
+let inputMapping = mapping(from: input)
+print("Part1: \(recurse(goal: 0, current: 0, seen: Set<Int>(), mapping: inputMapping).count)")
 
+// Part 2
+func calcPart2(mapping: [Int: [Int]]) -> Int {
+  var mapping = mapping
+  var groupValues = Set<Int>()
+  var groups = 0
+
+  while true {
+    guard !mapping.keys.isEmpty else { break }
+
+    let currentKey = mapping.keys.first!
+    groupValues.formUnion(recurse(goal: currentKey, current: currentKey, seen: Set<Int>(), mapping: mapping))
+    mapping = mapping.filter { groupValues.contains($0.key) == false }
+    groups += 1
+  }
+  return groups
+}
+print("Part2: \(calcPart2(mapping: inputMapping))")
