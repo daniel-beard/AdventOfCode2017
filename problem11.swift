@@ -25,6 +25,10 @@ ne,ne,ne is 3 steps away.
 ne,ne,sw,sw is 0 steps away (back where you started).
 ne,ne,s,s is 2 steps away (se,se).
 se,sw,se,sw,sw is 3 steps away (s,s,sw).
+
+--- Part Two ---
+
+How many steps away is the furthest he ever got from his starting position?
 */
 
 let input = """
@@ -69,7 +73,8 @@ func offsetCoordToCube(hex: Point) -> Cube {
   return (x, y, z)
 }
 
-func cubeDistance(_ a: Cube) -> Int {
+func hexDistance(_ a: Point) -> Int {
+  let a = offsetCoordToCube(hex: a)
   let b: Cube = (0,0,0)
   let dx = abs(a.x - b.x)
   let dy = abs(a.y - b.y)
@@ -77,8 +82,9 @@ func cubeDistance(_ a: Cube) -> Int {
   return (dx + dy + dz) / 2
 }
 
-func part1(_ input: String) {
+func calculate(_ input: String) {
   var point = Point(x: 0, y: 0)
+  var maxDistance = 0
   let directions: [Direction] = input.split(separator: ",").map { 
     switch $0 {
       case "n": return .north
@@ -92,11 +98,13 @@ func part1(_ input: String) {
   }  
   for direction in directions {
     point = move(point: point, direction: direction)
+    let newDistance = hexDistance(point)
+    maxDistance = newDistance > maxDistance ? newDistance : maxDistance
   }
-  let cube = offsetCoordToCube(hex: point)
-  let distance = cubeDistance(cube)
+  let distance = hexDistance(point)
   print("Part1: \(distance)")
+  print("Part2: \(maxDistance)")
 }
-part1(input)
+calculate(input)
 
 
